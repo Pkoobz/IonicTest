@@ -1,37 +1,50 @@
 import React, { useEffect, useState } from 'react';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonItem, IonLabel, IonInput, IonSelect, IonSelectOption} from '@ionic/react';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonItem, IonLabel, IonInput, IonSelect, IonSelectOption, IonBackButton, IonButtons, useIonToast} from '@ionic/react';
 import { doc, getDoc, updateDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { Transaction, Status } from '../types';
 import { useHistory, useParams } from 'react-router';
 
-const EditDataPage: React.FC = () => {
+const EditData: React.FC = () => {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [statuses, setStatuses] = useState<Status[]>([]);
+  const [present] = useIonToast();
   const history = useHistory();
   const { id } = useParams<{ id: string }>();
 
   useEffect(() => {
     const fetchData = async () => {
-      // Fetch transaction
-      const transactionRef = doc(db, 'transactions', id);
-      const transactionSnap = await getDoc(transactionRef);
-      if (transactionSnap.exists()) {
-        setTransaction(transactionSnap.data() as Transaction);
-      }
+      try {
+        const transactionRef = doc(db, 'transactions', id);
+        const transactionSnap = await getDoc(transactionRef);
+        
+        if (transactionSnap.exists()) {
+          const transactionData = transactionSnap.data() as Transaction;
+          setTransaction({
+            ...transactionData,
+            docId: transactionSnap.id
+          });
+        }
 
-      // Fetch statuses
-      const statusesRef = collection(db, 'statuses');
-      const statusSnap = await getDocs(statusesRef);
-      const statusData: Status[] = [];
-      statusSnap.forEach((doc) => {
-        statusData.push(doc.data() as Status);
-      });
-      setStatuses(statusData);
+        const statusesRef = collection(db, 'statuses');
+        const statusSnap = await getDocs(statusesRef);
+        const statusData: Status[] = [];
+        statusSnap.forEach((doc) => {
+          statusData.push({ ...doc.data() as Status });
+        });
+        setStatuses(statusData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        present({
+          message: 'Error loading transaction data',
+          duration: 2000,
+          color: 'danger'
+        });
+      }
     };
 
     fetchData();
-  }, [id]);
+  }, [id, present]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,69 +52,121 @@ const EditDataPage: React.FC = () => {
 
     try {
       const transactionRef = doc(db, 'transactions', id);
-      await updateDoc(transactionRef, {
-        ...transaction,
-        updateOn: new Date().toISOString(),
+      const updateData = {
+        productID: transaction.productID,
+        productName: transaction.productName,
+        amount: transaction.amount,
+        customerName: transaction.customerName,
+        status: transaction.status,
+        updateOn: new Date().toISOString()
+      };
+
+      await updateDoc(transactionRef, updateData);
+      
+      present({
+        message: 'Transaction updated successfully',
+        duration: 2000,
+        color: 'success'
       });
-      history.push('/home/data');
+
+      history.push(`/home/data/view/${id}`);
     } catch (error) {
       console.error('Error updating document: ', error);
+      present({
+        message: 'Error updating transaction',
+        duration: 2000,
+        color: 'danger'
+      });
     }
   };
 
-  if (!transaction) return <div>Loading...</div>;
+  if (!transaction) {
+    return (
+      <IonPage>
+        <IonHeader>
+          <IonToolbar>
+            <IonButtons slot="start">
+              <IonBackButton defaultHref={`/home/data/view/${id}`} />
+            </IonButtons>
+            <IonTitle>Edit Transaction</IonTitle>
+          </IonToolbar>
+        </IonHeader>
+        <IonContent>
+          <div className="p-4">Loading...</div>
+        </IonContent>
+      </IonPage>
+    );
+  }
 
   return (
     <IonPage>
       <IonHeader>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/home/data/view" />
+          </IonButtons>
           <IonTitle>Edit Transaction</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent>
-        <form onSubmit={handleSubmit} className="p-4">
+        <form onSubmit={handleSubmit} className="ion-padding">
           <IonItem>
-            <IonLabel position="floating">Product ID</IonLabel>
+            <IonLabel position="stacked">Product ID</IonLabel>
             <IonInput
               value={transaction.productID}
-              onIonChange={e => setTransaction({...transaction, productID: e.detail.value!})}
+              onIonChange={e => setTransaction({
+                ...transaction,
+                productID: e.detail.value || ''
+              })}
               required
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating">Product Name</IonLabel>
+            <IonLabel position="stacked">Product Name</IonLabel>
             <IonInput
               value={transaction.productName}
-              onIonChange={e => setTransaction({...transaction, productName: e.detail.value!})}
+              onIonChange={e => setTransaction({
+                ...transaction,
+                productName: e.detail.value || ''
+              })}
               required
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating">Amount</IonLabel>
+            <IonLabel position="stacked">Amount</IonLabel>
             <IonInput
               type="number"
               value={transaction.amount}
-              onIonChange={e => setTransaction({...transaction, amount: e.detail.value!})}
+              onIonChange={e => setTransaction({
+                ...transaction,
+                amount: e.detail.value || ''
+              })}
               required
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel position="floating">Customer Name</IonLabel>
+            <IonLabel position="stacked">Customer Name</IonLabel>
             <IonInput
               value={transaction.customerName}
-              onIonChange={e => setTransaction({...transaction, customerName: e.detail.value!})}
+              onIonChange={e => setTransaction({
+                ...transaction,
+                customerName: e.detail.value || ''
+              })}
               required
             />
           </IonItem>
 
           <IonItem>
-            <IonLabel>Status</IonLabel>
+            <IonLabel position="stacked">Status</IonLabel>
             <IonSelect
               value={transaction.status}
-              onIonChange={e => setTransaction({...transaction, status: e.detail.value})}
+              onIonChange={e => setTransaction({
+                ...transaction,
+                status: e.detail.value
+              })}
             >
               {statuses.map((status) => (
                 <IonSelectOption key={status.id} value={status.id}>
@@ -111,10 +176,9 @@ const EditDataPage: React.FC = () => {
             </IonSelect>
           </IonItem>
 
-          <div className="mt-4">
-            <IonButton type="submit">Update Transaction</IonButton>
-            <IonButton onClick={() => history.push('/home/data')} color="medium">
-              Cancel
+          <div className="ion-padding">
+            <IonButton type="submit" expand="block">
+              Update Transaction
             </IonButton>
           </div>
         </form>
@@ -122,5 +186,4 @@ const EditDataPage: React.FC = () => {
     </IonPage>
   );
 };
-
-export default EditDataPage;
+export default EditData;

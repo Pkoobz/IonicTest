@@ -8,6 +8,7 @@ export interface Transaction {
     transactionDate: string;
     createBy: string;
     createOn: string;
+    docId?: string;
   }
   
   export interface Status {

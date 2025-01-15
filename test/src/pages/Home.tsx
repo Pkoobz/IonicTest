@@ -9,7 +9,7 @@ const Home: React.FC = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
-          <IonTitle>Blank</IonTitle>
+          <IonTitle>Testing</IonTitle>
         </IonToolbar>
       </IonHeader>
       <IonContent fullscreen>
@@ -18,12 +18,6 @@ const Home: React.FC = () => {
         </IonButton>
         <IonButton onClick={() => history.push('/home/add')}>
           Go to Add Data
-        </IonButton>
-        <IonButton onClick={() => history.push('/home/view/1')}>
-          Go to View Detail
-        </IonButton>
-        <IonButton onClick={() => history.push('/home/edit/1')}>
-          Go to Edit Data
         </IonButton>
       </IonContent>
     </IonPage>

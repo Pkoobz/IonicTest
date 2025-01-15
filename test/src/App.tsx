@@ -46,10 +46,10 @@ const App: React.FC = () => (
         <Route exact path="/home">
           <Home />
         </Route>
-        <Route path="/home/Data" component={DataTable} exact />
+        <Route path="/home/data" component={DataTable} exact />
         <Route path="/home/add" component={AddDataPage} />
-        <Route path="/home/edit/:id" component={EditDataPage} />
-        <Route path="/home/view/:id" component={ViewDetailPage} />
+        <Route path="/home/data/edit/:id" component={EditDataPage} />
+        <Route path="/home/data/view/:id" component={ViewDetailPage} />
         <Redirect exact from="/" to="/home" />
       </IonRouterOutlet>
     </IonReactRouter>

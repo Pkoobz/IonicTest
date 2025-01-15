@@ -1,49 +1,39 @@
 import React, { useEffect, useState } from 'react';
-import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonItem, IonLabel, IonInput, IonSelect, IonSelectOption} from '@ionic/react';
-import { collection, addDoc, getDocs } from 'firebase/firestore';
+import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonButton, IonItem, IonLabel, IonInput, IonSelect, IonSelectOption, IonBackButton, IonButtons} from '@ionic/react';
+import { collection, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
-import { Status } from '../types';
 import { useHistory } from 'react-router';
 
-const AddDataPage: React.FC = () => {
+const AddData: React.FC = () => {
   const [formData, setFormData] = useState({
     productID: '',
     productName: '',
     amount: '',
     customerName: '',
-    status: 0,
+    status: 0
   });
-  const [statuses, setStatuses] = useState<Status[]>([]);
+
   const history = useHistory();
-
-  useEffect(() => {
-    const fetchStatuses = async () => {
-      const statusesRef = collection(db, 'statuses');
-      const statusSnap = await getDocs(statusesRef);
-      const statusData: Status[] = [];
-      statusSnap.forEach((doc) => {
-        statusData.push(doc.data() as Status);
-      });
-      setStatuses(statusData);
-    };
-
-    fetchStatuses();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const transactionsRef = collection(db, 'transactions');
-      await addDoc(transactionsRef, {
+      
+      const newTransaction = {
         ...formData,
-        id: Date.now(),
+        id: String(Math.floor(1000 + Math.random() * 9000)),
         transactionDate: new Date().toISOString(),
         createBy: 'system',
-        createOn: new Date().toISOString(),
-      });
+        createOn: new Date().toISOString()
+      };
+
+      await addDoc(transactionsRef, newTransaction);
+      alert('Transaction added successfully!');
       history.push('/home/data');
     } catch (error) {
-      console.error('Error adding document: ', error);
+      console.error('Error adding transaction:', error);
+      alert('Error adding transaction. Please try again.');
     }
   };
 
@@ -51,6 +41,10 @@ const AddDataPage: React.FC = () => {
     <IonPage>
       <IonHeader>
         <IonToolbar>
+          <IonButtons slot="start">
+            <IonBackButton defaultHref="/home" />
+            <IonButton routerLink="/home/data">Go to Data Table</IonButton>
+          </IonButtons>
           <IonTitle>Add New Transaction</IonTitle>
         </IonToolbar>
       </IonHeader>
@@ -99,19 +93,13 @@ const AddDataPage: React.FC = () => {
               value={formData.status}
               onIonChange={e => setFormData({...formData, status: e.detail.value})}
             >
-              {statuses.map((status) => (
-                <IonSelectOption key={status.id} value={status.id}>
-                  {status.name}
-                </IonSelectOption>
-              ))}
+              <IonSelectOption value={0}>SUCCESS</IonSelectOption>
+              <IonSelectOption value={1}>FAILED</IonSelectOption>
             </IonSelect>
           </IonItem>
 
-          <div className="mt-4">
-            <IonButton type="submit">Save Transaction</IonButton>
-            <IonButton onClick={() => history.push('/home/data')} color="medium">
-              Cancel
-            </IonButton>
+          <div className="ion-padding">
+            <IonButton type="submit" expand="block">Save Transaction</IonButton>
           </div>
         </form>
       </IonContent>
@@ -119,4 +107,4 @@ const AddDataPage: React.FC = () => {
   );
 };
 
-export default AddDataPage;
+export default AddData;
